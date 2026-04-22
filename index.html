@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downloader Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <main class="card">
+        <h1>Descargar Contenido</h1>
+        <p class="subtitle">Pega el link de YouTube, TikTok, Facebook, etc.</p>
+
+        <form id="downloadForm">
+            <input type="url" id="urlInput" placeholder="https://..." required autocomplete="off">
+
+            <div class="toggle-container">
+                <label class="toggle">
+                    <input type="radio" name="format" value="video" checked>
+                    <span class="btn">Video (MP4)</span>
+                </label>
+                <label class="toggle">
+                    <input type="radio" name="format" value="audio">
+                    <span class="btn">Audio (MP3)</span>
+                </label>
+            </div>
+
+            <button type="submit" id="submitBtn">
+                <span id="btnText">Descargar</span>
+                <div id="loader" class="loader hidden"></div>
+            </button>
+        </form>
+
+        <div id="resultArea" class="hidden">
+            <p id="resultText"></p>
+            <a id="downloadLink" href="#" class="download-btn">Guardar Archivo</a>
+        </div>
+    </main>
+
+    <footer>
+        <p>Diseñada por: Dr. Eduardo R. Henquín</p>
+        <a href="https://ehenquin.github.io/LinkTreePro/" target="_blank">https://ehenquin.github.io/LinkTreePro/</a>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
