@@ -1,9 +1,11 @@
 FROM node:18
 
 RUN apt-get update && \
-    apt-get install -y python3 python3-pip ffmpeg pipx && \
-    pipx install yt-dlp && \
-    ln -s /root/.local/bin/yt-dlp /usr/local/bin/yt-dlp
+    apt-get install -y python3 python3-pip ffmpeg curl && \
+    pip3 install --break-system-packages yt-dlp
+
+# 🔥 IMPORTANTE: instalar nodejs runtime para yt-dlp
+RUN apt-get install -y nodejs npm
 
 WORKDIR /app
 
