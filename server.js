@@ -28,10 +28,22 @@ app.post('/download', (req, res) => {
 
     // 🔥 FORMATOS ROBUSTOS
     const args = isAudio
-        ? ['-x', '--audio-format', 'mp3', '--no-playlist', '-o', output, url]
-        : ['-f', 'bv*+ba/best', '--merge-output-format', 'mp4', '--no-playlist', '-o', output, url];
-
-    const ytdlp = spawn('yt-dlp', args);
+        ? [
+            '-x',
+            '--audio-format', 'mp3',
+            '--no-playlist',
+            '--extractor-args', 'youtube:player_client=android',
+            '-o', output,
+            url
+        ]
+        : [
+            '-f', 'bv*+ba/best',
+            '--merge-output-format', 'mp4',
+            '--no-playlist',
+            '--extractor-args', 'youtube:player_client=android',
+            '-o', output,
+            url
+        ];
 
     let errorMsg = '';
 
