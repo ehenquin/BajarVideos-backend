@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -12,44 +12,58 @@ app.use(express.json());
 
 const tmpDir = path.join(__dirname, 'tmp');
 if (!fs.existsSync(tmpDir)) {
-    fs.mkdirSync(tmpDir); // Crea carpeta temporal si no existe
+    fs.mkdirSync(tmpDir);
 }
 
 app.post('/download', (req, res) => {
     const { url, format } = req.body;
 
-    if (!url) return res.status(400).json({ error: 'URL requerida' });
+    if (!url) {
+        return res.status(400).json({ error: 'URL requerida' });
+    }
 
-    const uniqueId = Date.now().toString();
+    const id = Date.now();
+    const output = path.join(tmpDir, `file_${id}.%(ext)s`);
     const isAudio = format === 'audio';
 
-    // Parámetros de yt-dlp según el formato seleccionado
-    const formatArg = isAudio
-        ? '-x --audio-format mp3'
-        : '-f "best[ext=mp4]/best"';
+    // 🔥 FORMATOS ROBUSTOS
+    const args = isAudio
+        ? ['-x', '--audio-format', 'mp3', '--no-playlist', '-o', output, url]
+        : ['-f', 'bv*+ba/best', '--merge-output-format', 'mp4', '--no-playlist', '-o', output, url];
 
-    const outputTemplate = path.join(tmpDir, `media_${uniqueId}.%(ext)s`);
+    const ytdlp = spawn('yt-dlp', args);
 
-    // Comando directo y seguro
-    const command = `yt-dlp ${formatArg} -o "${outputTemplate}" "${url}"`;
+    let errorMsg = '';
 
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            console.error('yt-dlp Error:', stderr);
-            return res.status(500).json({ error: 'Fallo al procesar la URL o plataforma no soportada.' });
+    ytdlp.stderr.on('data', (data) => {
+        errorMsg += data.toString();
+        console.log(data.toString());
+    });
+
+    ytdlp.on('close', (code) => {
+        if (code !== 0) {
+            console.error('ERROR yt-dlp:', errorMsg);
+
+            return res.status(500).json({
+                error: 'No se pudo procesar el video',
+                detail: errorMsg
+            });
         }
 
-        // Busca el archivo generado rastreando el ID único
         fs.readdir(tmpDir, (err, files) => {
-            if (err) return res.status(500).json({ error: 'Error leyendo carpeta temporal.' });
+            if (err) {
+                return res.status(500).json({ error: 'Error interno' });
+            }
 
-            const downloadedFile = files.find(f => f.includes(uniqueId));
+            const file = files.find(f => f.includes(id));
 
-            if (!downloadedFile) return res.status(500).json({ error: 'No se generó el archivo de descarga.' });
+            if (!file) {
+                return res.status(500).json({ error: 'Archivo no generado' });
+            }
 
             res.json({
-                filename: downloadedFile,
-                filepath: path.join(tmpDir, downloadedFile)
+                filename: file,
+                filepath: path.join(tmpDir, file)
             });
         });
     });
@@ -60,17 +74,14 @@ app.get('/file', (req, res) => {
     const name = req.query.name;
 
     if (!file || !fs.existsSync(file)) {
-        return res.status(404).send('El archivo no existe o ya expiró.');
+        return res.status(404).send('Archivo no disponible');
     }
 
-    res.download(file, name, (err) => {
-        if (err) console.error("Error al transferir el archivo:", err);
-
-        // Se autolimpieza eliminando el archivo local tras enviarlo a memoria
+    res.download(file, name, () => {
         fs.unlink(file, () => { });
     });
 });
 
 app.listen(PORT, () => {
-    console.log(`Backend de descargas corriendo en el puerto ${PORT}`);
+    console.log('Servidor corriendo en puerto', PORT);
 });
